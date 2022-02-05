@@ -22,20 +22,24 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import com.cricket.broadcaster.Doad;
+import com.cricket.containers.Bug;
 import com.cricket.model.BattingCard;
 import com.cricket.model.BowlingCard;
 import com.cricket.model.Inning;
 import com.cricket.model.Match;
 import com.cricket.model.Player;
+import com.cricket.model.Scene;
 import com.cricket.service.CricketService;
 import com.cricket.util.CricketUtil;
 
 import net.sf.json.JSONObject;
 
 @Controller
-@SessionAttributes(value={"session_match","session_selected_match","viz_ip_address","viz_port_number",
-		"viz_scene","session_socket","session_selected_broadcaster","print_writer"})
+@SessionAttributes(value={"session_match","session_selected_match","session_viz_ip_address","session_viz_port_number",
+		"session_viz_scene","session_socket","session_selected_broadcaster"})
 public class IndexController 
 {
 	@Autowired
@@ -44,7 +48,7 @@ public class IndexController
 	@RequestMapping(value = {"/","/initialise"}, method={RequestMethod.GET,RequestMethod.POST}) 
 	public String initialisePage(ModelMap model)  
 	{
-		model.addAttribute("viz_scenes", new File(CricketUtil.CRICKET_DIRECTORY + CricketUtil.SCENES_DIRECTORY).listFiles(new FileFilter() {
+		model.addAttribute("session_viz_scenes", new File(CricketUtil.CRICKET_DIRECTORY + CricketUtil.SCENES_DIRECTORY).listFiles(new FileFilter() {
 			@Override
 		    public boolean accept(File pathname) {
 		        String name = pathname.getName().toLowerCase();
@@ -64,9 +68,9 @@ public class IndexController
 
 	@RequestMapping(value = {"/output"}, method={RequestMethod.GET,RequestMethod.POST}) 
 	public String outputPage(ModelMap model,
-			@ModelAttribute("viz_ip_address") String viz_ip_address,
-			@ModelAttribute("viz_port_number") int viz_port_number,
-			@ModelAttribute("viz_scene") String viz_scene,
+			@ModelAttribute("session_viz_ip_address") String session_viz_ip_address,
+			@ModelAttribute("session_viz_port_number") int session_viz_port_number,
+			@ModelAttribute("session_viz_scene") String session_viz_scene,
 			@ModelAttribute("session_selected_match") String session_selected_match,
 			@ModelAttribute("session_socket") Socket session_socket,
 			@ModelAttribute("session_match") Match session_match,
@@ -78,28 +82,48 @@ public class IndexController
 			@RequestParam(value = "vizScene", required = false, defaultValue = "") String vizScene) 
 					throws UnknownHostException, IOException, JAXBException, IllegalAccessException, InvocationTargetException 
 	{
-		session_selected_match = selectedMatch; viz_ip_address = vizIPAddresss; session_selected_broadcaster = select_broadcaster;
-		viz_port_number = Integer.parseInt(vizPortNumber); viz_scene = vizScene; 
+		session_selected_match = selectedMatch; session_viz_ip_address = vizIPAddresss; session_selected_broadcaster = select_broadcaster;
+		session_viz_port_number = Integer.parseInt(vizPortNumber); session_viz_scene = vizScene; 
 		
-//		session_socket = new Socket(vizIPAddresss, viz_port_number);
-//		print_writer = new PrintWriter(session_socket.getOutputStream());
-//		new Scene(vizScene).scene_load(print_writer);
+		session_socket = new Socket(vizIPAddresss, session_viz_port_number);
+		new Scene(vizScene).scene_load(new PrintWriter(session_socket.getOutputStream(),true));
 
 		session_match = populateMatchVariables((Match) JAXBContext.newInstance(Match.class).createUnmarshaller().unmarshal(
 				new File(CricketUtil.CRICKET_DIRECTORY + CricketUtil.MATCHES_DIRECTORY + session_selected_match)));
 
 		model.addAttribute("session_match", session_match);
 		model.addAttribute("session_selected_match", session_selected_match);
-		model.addAttribute("viz_ip_address", viz_ip_address);
-		model.addAttribute("viz_port_number", viz_port_number);
+		model.addAttribute("session_viz_ip_address", session_viz_ip_address);
+		model.addAttribute("session_viz_port_number", session_viz_port_number);
+		model.addAttribute("session_socket", session_socket);
 		model.addAttribute("session_selected_broadcaster", session_selected_broadcaster);
 		
 		return "output";
 	}
 	
+	@RequestMapping(value = {"/populate_animate_in_bug"},method={RequestMethod.GET,RequestMethod.POST})    
+	public @ResponseBody String uploadFormDataToSessionObjects(MultipartHttpServletRequest request,
+			@ModelAttribute("session_match") Match session_match,
+			@ModelAttribute("session_socket") Socket session_socket,
+			@ModelAttribute("session_selected_broadcaster") String session_selected_broadcaster)
+			throws IllegalAccessException, InvocationTargetException, JAXBException, IOException
+	{
+		System.out.println("session_selected_broadcaster = " + session_selected_broadcaster);
+		switch (session_selected_broadcaster.toUpperCase()) {
+		case CricketUtil.DOAD:
+			System.out.println("URL = " + request.getRequestURI());
+			if (request.getRequestURI().contains("populate_animate_in_bug")) {
+				Bug this_bug = new Bug().processStatsForBugCaption(new Bug(request, session_match));
+				System.out.println("Bug = " + this_bug);
+				new Doad().populateBugs(new PrintWriter(session_socket.getOutputStream(),true), this_bug);
+			}
+			break;
+		}
+		return JSONObject.fromObject(null).toString();
+	}
+	
 	@RequestMapping(value = {"/processCricketProcedures"}, method={RequestMethod.GET,RequestMethod.POST})    
 	public @ResponseBody String processCricketProcedures(
-			@ModelAttribute("session_selected_match") String session_selected_match,
 			@ModelAttribute("session_match") Match session_match,
 			@RequestParam(value = "whatToProcess", required = false, defaultValue = "") String whatToProcess,
 			@RequestParam(value = "valueToProcess", required = false, defaultValue = "") String valueToProcess)
@@ -231,18 +255,21 @@ public class IndexController
 		}
 		return bc;
 	}
+
+//	@SessionAttributes(value={"session_match","session_selected_match","session_viz_ip_address","session_viz_port_number",
+//			"session_viz_scene","session_socket","session_selected_broadcaster","session_print_writer"})
 	
-	@ModelAttribute("viz_scene")
-	public String viz_scene(){
+	@ModelAttribute("session_viz_scene")
+	public String session_viz_scene(){
 		return new String();
 	}
-	@ModelAttribute("viz_ip_address")
-	public String viz_ip_address(){
+	@ModelAttribute("session_viz_ip_address")
+	public String session_viz_ip_address(){
 		return new String();
 	}
 	@SuppressWarnings("removal")
-	@ModelAttribute("viz_port_number")
-	public Integer viz_port_number(){
+	@ModelAttribute("session_viz_port_number")
+	public Integer session_viz_port_number(){
 		return new Integer(6100);
 	}
 	@ModelAttribute("session_selected_match")
@@ -260,9 +287,5 @@ public class IndexController
 	@ModelAttribute("session_match")
 	public Match session_match(){
 		return new Match();
-	}
-	@ModelAttribute("printer_writer")
-	public PrintWriter print_writer(){
-		return null;
 	}
 }

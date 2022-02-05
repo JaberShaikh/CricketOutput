@@ -49,6 +49,43 @@ function processUserSelection(whichInput)
 		break;
 	}
 }
+function uploadFormDataToSessionObjects(whatToProcess)
+{
+	var formData = new FormData();
+	var url_path;
+
+	$('input, select, textarea').each(
+		function(index){  
+			formData.append($(this).attr('id'),document.getElementById($(this).attr('id')).value);  
+		}
+	);
+	
+	switch(whatToProcess.toUpperCase()) {
+	case 'POPULATE-ANIMATE-BUG':
+		url_path = 'populate_animate_in_bug';
+		break;
+	}
+	
+	$.ajax({    
+		headers: {'X-CSRF-TOKEN': $('meta[name="_csrf"]').attr('content')},
+        url : url_path,     
+        data : formData,
+        cache: false,
+        contentType: false,
+        processData: false,
+        type: 'POST',     
+        success : function(response) {
+        	switch(whatToProcess.toUpperCase()) {
+        	case 'POPULATE-ANIMATE-BUG':
+        		break;
+        	}
+        },    
+        error : function(e) {    
+       	 	console.log('Error occured in uploadFormDataToSessionObjects with error description = ' + e);     
+        }    
+    });		
+	
+}
 function processCricketProcedures(whatToProcess)
 {
 	$.ajax({    
@@ -78,7 +115,7 @@ function addItemsToList(whatToProcess, dataToProcess)
 	case 'POPULATE-SELECT-BATSMEN':
 		
 		$('#select_batsman').empty();
-		select = document.getElementById('select_batsman');
+		select = document.getElementById('selectBatsman');
 		
 		match_data.inning.forEach(function(inn,index,arr) {
 			if(inn.inningNumber == dataToProcess.value) {
@@ -122,20 +159,20 @@ function addItemsToList(whatToProcess, dataToProcess)
 			row.insertCell(i-1).appendChild(select);
 			switch (i) {
 			case 1: // Stats type
-				select.id = 'select_stats_type';
+				select.id = 'selectStats';
 				for(var j=1; j<=1; j++) {
 					option = document.createElement('option');
 					switch (j) {
 					case 1:
-						option.value = 'batsman_stats';
+						option.value = 'batsmanStats';
 					    option.text = "Batsman's Stats";
 						break;
 /*					case 2:
-						option.value = 'bowler_stats';
+						option.value = 'bowlerStats';
 					    option.text = "Bowler's Stats";
 						break;
 					case 3:
-						option.value = 'team_stats';
+						option.value = 'teamStats';
 					    option.text = "Team's Stats";
 						break; */
 					}
@@ -143,7 +180,7 @@ function addItemsToList(whatToProcess, dataToProcess)
 				}
 				break;
 			case 2: // Select inning
-				select.id = 'select_inning';
+				select.id = 'selectInning';
 				select.setAttribute('onchange',"addItemsToList('POPULATE-SELECT-BATSMEN',this)");				
 				dataToProcess.inning.forEach(function(inn,index,arr){
 					option = document.createElement('option');
@@ -156,7 +193,7 @@ function addItemsToList(whatToProcess, dataToProcess)
 				});
 				break;
 			case 3: // Select batsman
-				select.id = 'select_batsman';
+				select.id = 'selectBatsman';
 				dataToProcess.inning.forEach(function(inn,index,arr){
 					if(inn.isCurrentInning.toLowerCase() == 'yes') {
 					    inn.battingCard.forEach(function(bc,bc_index,bc_arr){
@@ -181,7 +218,7 @@ function addItemsToList(whatToProcess, dataToProcess)
 	    option.name = 'bug_animate_in_btn';
 	    option.value = 'Animate In Bug';
 	    option.id = option.name;
-	    option.setAttribute('onclick','processUserSelection(this);');
+	    option.setAttribute('onclick',"uploadFormDataToSessionObjects('POPULATE-ANIMATE-BUG')");
 	    
 	    div = document.createElement('div');
 	    div.append(option);
@@ -219,25 +256,4 @@ function checkEmpty(inputBox,textToShow) {
 		return false;
 	}
 	return true;	
-}
-function getFullEventTypeWord(event_type)
-{
-	switch (event_type) {
-	case '0':
-		return 'Dot';
-	case '1':
-		return 'Single';
-	case '2':
-		return 'Two';
-	case '3':
-		return 'Three';
-	case '4':
-		return 'Four';
-	case '5':
-		return 'Five';
-	case '6':
-		return 'Six';
-	default:
-		return event_type.replace(/(^\w{1})|(\s{1}\w{1})/g, match => match.toUpperCase()).replace('_',' ');
-	}
 }
