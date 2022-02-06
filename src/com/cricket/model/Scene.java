@@ -28,6 +28,6 @@ public class Scene {
 		print_writer.println("-1 RENDERER SET_OBJECT SCENE*" + scene_path + "\0");
 		print_writer.println("-1 RENDERER INITIALIZE \0");
 		print_writer.println("-1 RENDERER*SCENE_DATA INITIALIZE \0");
-		print_writer.println("-1 RENDERER*UPDATE SET 0");
+		print_writer.println("-1 RENDERER*UPDATE SET 1");
 	}
 }

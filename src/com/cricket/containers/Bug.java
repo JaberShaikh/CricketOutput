@@ -15,6 +15,10 @@ public class Bug {
 	
 	private MultipartHttpServletRequest request;
 	private Match match;
+	
+	private String stat_option;
+	private int inning_number;
+	private int player_id;
 	private List<String> stats_text;
 	private String header_text;
 	private String subheader_text;
@@ -26,6 +30,24 @@ public class Bug {
 		super();
 		this.request = request;
 		this.match = match;
+	}
+	public String getStat_option() {
+		return stat_option;
+	}
+	public void setStat_option(String stat_option) {
+		this.stat_option = stat_option;
+	}
+	public int getInning_number() {
+		return inning_number;
+	}
+	public void setInning_number(int inning_number) {
+		this.inning_number = inning_number;
+	}
+	public int getPlayer_id() {
+		return player_id;
+	}
+	public void setPlayer_id(int player_id) {
+		this.player_id = player_id;
 	}
 	public MultipartHttpServletRequest getRequest() {
 		return request;
@@ -65,14 +87,17 @@ public class Bug {
 		for (Entry<String, String[]> entry : bug.getRequest().getParameterMap().entrySet()) {
 			if(entry.getKey().equalsIgnoreCase(CricketUtil.SELECT + CricketUtil.INNING)) {
 				inning_number = Integer.parseInt(entry.getValue()[0]);
+				bug.setInning_number(inning_number);
 			} else if(entry.getKey().equalsIgnoreCase(CricketUtil.SELECT + CricketUtil.BATSMAN)) {
 				player_id = Integer.parseInt(entry.getValue()[0]);
+				bug.setPlayer_id(player_id);
 			}
 		}
 		for (Entry<String, String[]> entry : bug.getRequest().getParameterMap().entrySet()) {
 			if(entry.getKey().equalsIgnoreCase(CricketUtil.SELECT + CricketUtil.STATS)) {
 				switch (entry.getValue()[0].toUpperCase()) {
 				case CricketUtil.BATSMAN + CricketUtil.STATS:
+					bug.setStat_option(entry.getValue()[0].toUpperCase());
 					for(Inning inn : bug.getMatch().getInning()) {
 						if(inn.getInningNumber() == inning_number) {
 							for(BattingCard bc : inn.getBattingCard()) {

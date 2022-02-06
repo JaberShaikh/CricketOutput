@@ -115,7 +115,8 @@ public class IndexController
 			if (request.getRequestURI().contains("populate_animate_in_bug")) {
 				Bug this_bug = new Bug().processStatsForBugCaption(new Bug(request, session_match));
 				System.out.println("Bug = " + this_bug);
-				new Doad().populateBugs(new PrintWriter(session_socket.getOutputStream(),true), this_bug);
+				PrintWriter print_writer = new PrintWriter(session_socket.getOutputStream(), true);
+				new Doad().populateBugs(print_writer, this_bug);
 			}
 			break;
 		}
