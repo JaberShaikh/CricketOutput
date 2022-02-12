@@ -8,10 +8,12 @@
   <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
   <title>Output Screen</title>
 	
-  <script type="text/javascript" src="<c:url value="/webjars/jquery/1.9.1/jquery.min.js"/>"></script>
-  <script type="text/javascript" src="<c:url value="/webjars/bootstrap/3.3.6/js/bootstrap.min.js"/>"></script>
+  <script type="text/javascript" src="<c:url value="/webjars/jquery/3.6.0/jquery.min.js"/>"></script>
+  <script type="text/javascript" src="<c:url value="/webjars/bootstrap/5.1.3/js/bootstrap.min.js"/>"></script>
   <script type="text/javascript" src="<c:url value="/resources/javascript/index.js"/>"></script>
-  <link rel="stylesheet" href="<c:url value="/webjars/bootstrap/3.3.6/css/bootstrap.min.css"/>"/>  
+  
+  <link rel="stylesheet" href="<c:url value="/webjars/bootstrap/5.1.3/css/bootstrap.min.css"/>"/>  
+  <link href="<c:url value="/webjars/font-awesome/6.0.0/css/all.css"/>" rel="stylesheet">
 	
 </head>
 <body>
@@ -36,7 +38,7 @@
 			    <button style="background-color:#2E008B;color:#FEFEFE;" class="btn btn-sm" type="button"
 			  		name="scorecard_graphic_btn" id="scorecard_graphic_btn" onclick="processUserSelection(this)"> Scorecard </button>
 			  	<br>
-			    <button style="background-color:#2E008B;color:#FEFEFE;" class="btn btn-sm" type="button"
+			    <button style="background-color:#2E008B;color:#FEFEFE;display:none;" class="btn btn-sm" type="button"
 			  		name="bug_graphic_btn" id="bug_graphic_btn" onclick="processUserSelection(this)"> Bug </button>
 			  </div>
 	       </div>
@@ -45,6 +47,8 @@
     </div>
   </div>
 </div>
+<input type="hidden" name="selected_broadcaster" id="selected_broadcaster" value="${session_selected_broadcaster}"/>
+<input type="hidden" name="selected_match_max_overs" id="selected_match_max_overs" value="${session_match.maxOvers}"/>
 </form:form>
 </body>
 </html>

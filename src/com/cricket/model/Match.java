@@ -187,5 +187,14 @@ public List<Inning> getInning() {
 public void setInning(List<Inning> inning) {
 	this.inning = inning;
 }
+@Override
+public String toString() {
+	return "Match [substitutes=" + substitutes + ", matchType=" + matchType + ", matchFileName=" + matchFileName
+			+ ", tossResult=" + tossResult + ", tossWinningDecision=" + tossWinningDecision + ", tossWinningTeam="
+			+ tossWinningTeam + ", maxOvers=" + maxOvers + ", reducedOvers=" + reducedOvers + ", homeTeamId="
+			+ homeTeamId + ", awayTeamId=" + awayTeamId + ", groundId=" + groundId + ", target=" + target + ", ground="
+			+ ground + ", homeTeam=" + homeTeam + ", awayTeam=" + awayTeam + ", inning=" + inning + ", homeSquad="
+			+ homeSquad + ", awaySquad=" + awaySquad + "]";
+}
 
 }

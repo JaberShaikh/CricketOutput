@@ -4,12 +4,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cricket.containers.Bug;
+import com.cricket.containers.Scorecard;
 import com.cricket.model.BattingCard;
 import com.cricket.model.Inning;
 import com.cricket.model.Match;
 
 public class CricketProceduresFunctions {
 
+	public Scorecard scorecardToProcess(String whichBroadcaster, String valueToProcess, Match match)
+	{
+		switch (whichBroadcaster.toUpperCase()) {
+		case CricketUtil.DOAD:
+			for(Inning inn : match.getInning()) {
+				if (inn.getInningNumber() == Integer.valueOf(valueToProcess)) {
+					return new Scorecard(inn);
+				}
+			}
+			break;
+		}
+		return null;
+	}
+	
 	public Bug bugToProcess(String whichBroadcaster, String valueToProcess, Match match) 
 	{
 		Bug bug = new Bug();

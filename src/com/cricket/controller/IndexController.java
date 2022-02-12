@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
 import com.cricket.broadcaster.Doad;
+import com.cricket.containers.Scorecard;
 import com.cricket.model.BattingCard;
 import com.cricket.model.BowlingCard;
 import com.cricket.model.Inning;
@@ -38,7 +39,7 @@ import net.sf.json.JSONObject;
 
 @Controller
 @SessionAttributes(value={"session_match","session_selected_match","session_viz_ip_address","session_viz_port_number",
-		"session_viz_scene","session_socket","session_selected_broadcaster"})
+		"session_viz_scene","session_socket","session_selected_broadcaster", "session_which_graphics_onscreen"})
 public class IndexController 
 {
 	@Autowired
@@ -72,6 +73,7 @@ public class IndexController
 			@ModelAttribute("session_viz_scene") String session_viz_scene,
 			@ModelAttribute("session_selected_match") String session_selected_match,
 			@ModelAttribute("session_socket") Socket session_socket,
+			@ModelAttribute("session_which_graphics_onscreen") String session_which_graphics_onscreen,
 			@ModelAttribute("session_match") Match session_match,
 			@ModelAttribute("session_selected_broadcaster") String session_selected_broadcaster,
 			@RequestParam(value = "select_broadcaster", required = false, defaultValue = "") String select_broadcaster,
@@ -86,6 +88,7 @@ public class IndexController
 		
 		session_socket = new Socket(vizIPAddresss, session_viz_port_number);
 		new Scene(vizScene).scene_load(new PrintWriter(session_socket.getOutputStream(),true));
+		session_which_graphics_onscreen = "";
 
 		session_match = populateMatchVariables((Match) JAXBContext.newInstance(Match.class).createUnmarshaller().unmarshal(
 				new File(CricketUtil.CRICKET_DIRECTORY + CricketUtil.MATCHES_DIRECTORY + session_selected_match)));
@@ -105,23 +108,33 @@ public class IndexController
 			@ModelAttribute("session_match") Match session_match,
 			@ModelAttribute("session_socket") Socket session_socket,
 			@ModelAttribute("session_selected_broadcaster") String session_selected_broadcaster,
+			@ModelAttribute("session_which_graphics_onscreen") String session_which_graphics_onscreen,
 			@RequestParam(value = "whatToProcess", required = false, defaultValue = "") String whatToProcess,
 			@RequestParam(value = "valueToProcess", required = false, defaultValue = "") String valueToProcess) throws IOException
 	{	
 		switch (whatToProcess.toUpperCase()) {
+		case "POPULATE-SCORECARD":
+			switch (session_selected_broadcaster.toUpperCase()) {
+			case CricketUtil.DOAD:
+				Scorecard scorecard = new CricketProceduresFunctions().scorecardToProcess(session_selected_broadcaster, valueToProcess, session_match);
+				if(scorecard != null) {
+					scorecard.setStatus(new Doad().populateScorecard(new PrintWriter(session_socket.getOutputStream(), true), scorecard));
+					return JSONObject.fromObject(scorecard).toString();
+				}
+			}
+			return JSONObject.fromObject(null).toString();
 		case "POPULATE-SELECT-PLAYER": 
 			return JSONObject.fromObject(session_match).toString();
 		case "POPULATE-ANIMATE-BUG":
 			switch (session_selected_broadcaster.toUpperCase()) {
 			case CricketUtil.DOAD:
-				PrintWriter print_writer = new PrintWriter(session_socket.getOutputStream(), true);
-				new Doad().populateBugs(print_writer, 
+				new Doad().populateBugs(new PrintWriter(session_socket.getOutputStream(), true), 
 						new CricketProceduresFunctions().bugToProcess(session_selected_broadcaster, valueToProcess, session_match));
 				break;
 			}
-			return null;
+			return JSONObject.fromObject(null).toString();
 		default:
-			return null;
+			return JSONObject.fromObject(null).toString();
 		}
 	}
 	
@@ -245,9 +258,6 @@ public class IndexController
 		return bc;
 	}
 
-//	@SessionAttributes(value={"session_match","session_selected_match","session_viz_ip_address","session_viz_port_number",
-//			"session_viz_scene","session_socket","session_selected_broadcaster","session_print_writer"})
-	
 	@ModelAttribute("session_viz_scene")
 	public String session_viz_scene(){
 		return new String();
@@ -277,4 +287,9 @@ public class IndexController
 	public Match session_match(){
 		return new Match();
 	}
+	@ModelAttribute("session_which_graphics_onscreen")
+	public String session_which_graphics_onscreen(){
+		return new String();
+	}
+	
 }

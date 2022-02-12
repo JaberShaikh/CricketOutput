@@ -8,6 +8,7 @@ public class CricketUtil {
 
 	public final static String YES = "YES";
 	public final static String NO = "NO";
+	public final static String SUCCESS = "SUCCESS";
 	
 	public final static String OUT = "OUT";
 	public final static String NOT_OUT = "NOTOUT";
