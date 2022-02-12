@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
@@ -41,11 +40,11 @@ public class WebMvcConfig extends WebMvcConfigurerAdapter
      registry.addResourceHandler("/resources/**").addResourceLocations("/WEB-INF/resources/");
 } 
 
- @Bean(name = "multipartResolver")
- public CommonsMultipartResolver getCommonsMultipartResolver() {
-     CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
-     multipartResolver.setMaxUploadSize(10485760);   // 10MB
-     multipartResolver.setMaxInMemorySize(1048576);  // 1MB
-     return multipartResolver;
- }  
+// @Bean(name = "multipartResolver")
+// public CommonsMultipartResolver getCommonsMultipartResolver() {
+//     CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
+//     multipartResolver.setMaxUploadSize(10485760);   // 10MB
+//     multipartResolver.setMaxInMemorySize(1048576);  // 1MB
+//     return multipartResolver;
+// }  
  }

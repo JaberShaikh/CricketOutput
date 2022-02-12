@@ -37,4 +37,5 @@ public class CricketUtil {
 	public final static String STATS = "STATS";
 
 	public final static String DOAD = "DOAD";
+	
 }

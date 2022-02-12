@@ -1,4 +1,3 @@
-var match_data; 
 function processWaitingButtonSpinner(whatToProcess) 
 {
 	switch (whatToProcess) {
@@ -24,6 +23,13 @@ function reloadPage(whichPage)
 function processUserSelection(whichInput)
 {	
 	switch ($(whichInput).attr('name')) {
+	case 'bug_animate_in_btn':
+		if ($('#selectPlayer:selected').val()) {
+			processCricketProcedures('POPULATE-ANIMATE-BUG');
+		} else {
+			alert('No player selected');
+		}
+		break;
 	case 'cancel_bug_graphics_btn':
 		$('#select_graphic_options_div').empty();
 		document.getElementById('select_graphic_options_div').style.display = 'none';
@@ -32,7 +38,7 @@ function processUserSelection(whichInput)
 	case 'select_broadcaster':
 		switch ($('#select_broadcaster :selected').val()) {
 		case 'doad':
-			$('#vizScene').attr('value','/Default/DOAD_In_House/Bugs');
+			$('#vizScene').attr('value','/Default/DOAD_In_House/BatBallSummary');
 			break;
 		}
 		break;
@@ -45,62 +51,35 @@ function processUserSelection(whichInput)
       	document.initialise_form.submit();
 		break;
 	case 'bug_graphic_btn':
-		processCricketProcedures('BUG-OPTIONS',null)
+		addItemsToList('BUG-OPTIONS',null);
 		break;
 	}
-}
-function uploadFormDataToSessionObjects(whatToProcess)
-{
-	var formData = new FormData();
-	var url_path;
-
-	$('input, select, textarea').each(
-		function(index){  
-			formData.append($(this).attr('id'),document.getElementById($(this).attr('id')).value);  
-		}
-	);
-	
-	switch(whatToProcess.toUpperCase()) {
-	case 'POPULATE-ANIMATE-BUG':
-		url_path = 'populate_animate_in_bug';
-		break;
-	}
-	
-	$.ajax({    
-		headers: {'X-CSRF-TOKEN': $('meta[name="_csrf"]').attr('content')},
-        url : url_path,     
-        data : formData,
-        cache: false,
-        contentType: false,
-        processData: false,
-        type: 'POST',     
-        success : function(response) {
-        	switch(whatToProcess.toUpperCase()) {
-        	case 'POPULATE-ANIMATE-BUG':
-        		break;
-        	}
-        },    
-        error : function(e) {    
-       	 	console.log('Error occured in uploadFormDataToSessionObjects with error description = ' + e);     
-        }    
-    });		
-	
 }
 function processCricketProcedures(whatToProcess)
 {
+	var valueToProcess;
+	
+	switch(whatToProcess) {
+	case 'POPULATE-ANIMATE-BUG':
+		valueToProcess = 'Stats:' + $('#selectStats:selected').val() + 
+			'|Inning:' + $('#selectInning:selected').val() + 
+			'|Player:' + $('#selectPlayer:selected').val();
+		break;
+	}
+
 	$.ajax({    
         type : 'Get',     
         url : 'processCricketProcedures.html',     
-        data : 'whatToProcess=' + whatToProcess + '&valueToProcess=', 
+        data : 'whatToProcess=' + whatToProcess + '&valueToProcess=' + valueToProcess, 
         dataType : 'json',
         success : function(data) {
         	switch(whatToProcess) {
-        	case 'BUG-OPTIONS': 
-				addItemsToList('BUG-OPTIONS',data);
-				match_data = data;
-        		break;
+			case 'POPULATE-ANIMATE-BUG':
+				break;
+			case 'POPULATE-SELECT-PLAYER':
+				addItemsToList(whatToProcess,data);
+				break;
         	}
-    		processWaitingButtonSpinner('END_WAIT_TIMER');
 	    },    
 	    error : function(e) {    
 	  	 	console.log('Error occured in ' + whatToProcess + ' with error description = ' + e);     
@@ -112,24 +91,28 @@ function addItemsToList(whatToProcess, dataToProcess)
 	var select,option,header_text,div,table,tbody,row,max_cols;
 	
 	switch (whatToProcess) {
-	case 'POPULATE-SELECT-BATSMEN':
+	case 'POPULATE-SELECT-PLAYER':
 		
 		$('#select_batsman').empty();
-		select = document.getElementById('selectBatsman');
+		select = document.getElementById('selectPlayer');
 		
-		match_data.inning.forEach(function(inn,index,arr) {
-			if(inn.inningNumber == dataToProcess.value) {
-			    inn.battingCard.forEach(function(bc,bc_index,bc_arr){
-					if(bc.runs > 0 || bc.balls > 0) {
-						option = document.createElement('option');
-						option.value = bc.playerId;
-					    option.text = bc.player.surname + ': ' + bc.runs + ' (' + bc.balls + ')';
-					    if(bc.onStrike.toLowerCase() == 'yes') {
-						    option.selected = true;
-					    }
-					    select.appendChild(option);
-					}
-				});
+		dataToProcess.inning.forEach(function(inn,index,arr) {
+			if(inn.inningNumber == $('#selectInning:selected').val()) {
+				switch ($('#selectStats:selected').val()) {
+				case 'batsmanStats':
+				    inn.battingCard.forEach(function(bc,bc_index,bc_arr){
+						if(bc.runs > 0 || bc.balls > 0) {
+							option = document.createElement('option');
+							option.value = bc.playerId;
+						    option.text = bc.player.surname + ': ' + bc.runs + ' (' + bc.balls + ')';
+						    if(bc.onStrike.toLowerCase() == 'yes') {
+							    option.selected = true;
+						    }
+						    select.appendChild(option);
+						}
+					});
+					break;
+				}
 			}
 		});
 		break;
@@ -156,32 +139,33 @@ function addItemsToList(whatToProcess, dataToProcess)
 		
 		for(var i=1; i<=max_cols; i++) {
 			select = document.createElement('select');
+			select.setAttribute('onchange',"processCricketProcedures('POPULATE-SELECT-PLAYER',this)");				
 			row.insertCell(i-1).appendChild(select);
 			switch (i) {
 			case 1: // Stats type
 				select.id = 'selectStats';
-				for(var j=1; j<=1; j++) {
+				for(var j=1; j<=3; j++) {
 					option = document.createElement('option');
 					switch (j) {
 					case 1:
 						option.value = 'batsmanStats';
 					    option.text = "Batsman's Stats";
 						break;
-/*					case 2:
+					case 2:
 						option.value = 'bowlerStats';
 					    option.text = "Bowler's Stats";
 						break;
 					case 3:
 						option.value = 'teamStats';
 					    option.text = "Team's Stats";
-						break; */
+						break; 
 					}
 				    select.appendChild(option);
 				}
 				break;
 			case 2: // Select inning
 				select.id = 'selectInning';
-				select.setAttribute('onchange',"addItemsToList('POPULATE-SELECT-BATSMEN',this)");				
+				select.setAttribute('onchange',"processCricketProcedures('POPULATE-SELECT-PLAYER',this)");				
 				dataToProcess.inning.forEach(function(inn,index,arr){
 					option = document.createElement('option');
 					option.value = inn.inningNumber;
@@ -192,24 +176,8 @@ function addItemsToList(whatToProcess, dataToProcess)
 				    select.appendChild(option);
 				});
 				break;
-			case 3: // Select batsman
-				select.id = 'selectBatsman';
-				dataToProcess.inning.forEach(function(inn,index,arr){
-					if(inn.isCurrentInning.toLowerCase() == 'yes') {
-					    inn.battingCard.forEach(function(bc,bc_index,bc_arr){
-							if(bc.runs > 0 || bc.balls > 0) {
-								option = document.createElement('option');
-								option.value = bc.playerId;
-							    option.text = bc.player.surname + ': ' + bc.runs + ' (' + bc.balls + ')';
-							    if(bc.onStrike.toLowerCase() == 'yes') {
-								    option.selected = true;
-							    }
-							    select.appendChild(option);
-							}
-						});
-					}
-				});
-				break;
+			case 3: // Select player
+				select.id = 'selectPlayer';
 			}
 		}
 
@@ -218,7 +186,7 @@ function addItemsToList(whatToProcess, dataToProcess)
 	    option.name = 'bug_animate_in_btn';
 	    option.value = 'Animate In Bug';
 	    option.id = option.name;
-	    option.setAttribute('onclick',"uploadFormDataToSessionObjects('POPULATE-ANIMATE-BUG')");
+	    option.setAttribute('onclick',"processUserSelection(this)");
 	    
 	    div = document.createElement('div');
 	    div.append(option);
@@ -257,3 +225,40 @@ function checkEmpty(inputBox,textToShow) {
 	}
 	return true;	
 }
+/*function uploadFormDataToSessionObjects(whatToProcess)
+{
+	var formData = new FormData();
+	var url_path;
+
+	$('input, select, textarea').each(
+		function(index){  
+			formData.append($(this).attr('id'),document.getElementById($(this).attr('id')).value);  
+		}
+	);
+	
+	switch(whatToProcess.toUpperCase()) {
+	case 'POPULATE-ANIMATE-BUG':
+		url_path = 'populate_animate_in_bug';
+		break;
+	}
+	
+	$.ajax({    
+		headers: {'X-CSRF-TOKEN': $('meta[name="_csrf"]').attr('content')},
+        url : url_path,     
+        data : formData,
+        cache: false,
+        contentType: false,
+        processData: false,
+        type: 'POST',     
+        success : function(response) {
+        	switch(whatToProcess.toUpperCase()) {
+        	case 'POPULATE-ANIMATE-BUG':
+        		break;
+        	}
+        },    
+        error : function(e) {    
+       	 	console.log('Error occured in uploadFormDataToSessionObjects with error description = ' + e);     
+        }    
+    });		
+	
+} */

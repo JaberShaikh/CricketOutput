@@ -22,10 +22,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import com.cricket.broadcaster.Doad;
-import com.cricket.containers.Bug;
 import com.cricket.model.BattingCard;
 import com.cricket.model.BowlingCard;
 import com.cricket.model.Inning;
@@ -33,6 +31,7 @@ import com.cricket.model.Match;
 import com.cricket.model.Player;
 import com.cricket.model.Scene;
 import com.cricket.service.CricketService;
+import com.cricket.util.CricketProceduresFunctions;
 import com.cricket.util.CricketUtil;
 
 import net.sf.json.JSONObject;
@@ -52,7 +51,7 @@ public class IndexController
 			@Override
 		    public boolean accept(File pathname) {
 		        String name = pathname.getName().toLowerCase();
-		        return name.endsWith(".sum") && pathname.isFile();
+		        return name.endsWith(".via") && pathname.isFile();
 		    }
 		}));
 		model.addAttribute("match_files", new File(CricketUtil.CRICKET_DIRECTORY + CricketUtil.MATCHES_DIRECTORY).listFiles(new FileFilter() {
@@ -101,37 +100,26 @@ public class IndexController
 		return "output";
 	}
 	
-	@RequestMapping(value = {"/populate_animate_in_bug"},method={RequestMethod.GET,RequestMethod.POST})    
-	public @ResponseBody String uploadFormDataToSessionObjects(MultipartHttpServletRequest request,
-			@ModelAttribute("session_match") Match session_match,
-			@ModelAttribute("session_socket") Socket session_socket,
-			@ModelAttribute("session_selected_broadcaster") String session_selected_broadcaster)
-			throws IllegalAccessException, InvocationTargetException, JAXBException, IOException
-	{
-		System.out.println("session_selected_broadcaster = " + session_selected_broadcaster);
-		switch (session_selected_broadcaster.toUpperCase()) {
-		case CricketUtil.DOAD:
-			System.out.println("URL = " + request.getRequestURI());
-			if (request.getRequestURI().contains("populate_animate_in_bug")) {
-				Bug this_bug = new Bug().processStatsForBugCaption(new Bug(request, session_match));
-				System.out.println("Bug = " + this_bug);
-				PrintWriter print_writer = new PrintWriter(session_socket.getOutputStream(), true);
-				new Doad().populateBugs(print_writer, this_bug);
-			}
-			break;
-		}
-		return JSONObject.fromObject(null).toString();
-	}
-	
 	@RequestMapping(value = {"/processCricketProcedures"}, method={RequestMethod.GET,RequestMethod.POST})    
 	public @ResponseBody String processCricketProcedures(
 			@ModelAttribute("session_match") Match session_match,
+			@ModelAttribute("session_socket") Socket session_socket,
+			@ModelAttribute("session_selected_broadcaster") String session_selected_broadcaster,
 			@RequestParam(value = "whatToProcess", required = false, defaultValue = "") String whatToProcess,
-			@RequestParam(value = "valueToProcess", required = false, defaultValue = "") String valueToProcess)
+			@RequestParam(value = "valueToProcess", required = false, defaultValue = "") String valueToProcess) throws IOException
 	{	
 		switch (whatToProcess.toUpperCase()) {
-		case "BUG-OPTIONS": 
+		case "POPULATE-SELECT-PLAYER": 
 			return JSONObject.fromObject(session_match).toString();
+		case "POPULATE-ANIMATE-BUG":
+			switch (session_selected_broadcaster.toUpperCase()) {
+			case CricketUtil.DOAD:
+				PrintWriter print_writer = new PrintWriter(session_socket.getOutputStream(), true);
+				new Doad().populateBugs(print_writer, 
+						new CricketProceduresFunctions().bugToProcess(session_selected_broadcaster, valueToProcess, session_match));
+				break;
+			}
+			return null;
 		default:
 			return null;
 		}
