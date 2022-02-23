@@ -72,7 +72,16 @@ public class Match {
   @XmlElementWrapper(name = "awaySquad")
   @XmlElement(name = "awaySquad")
   private List<Player> awaySquad;
+
+  @XmlTransient
+  private String match_file_timestamp;
   
+public String getMatch_file_timestamp() {
+	return match_file_timestamp;
+}
+public void setMatch_file_timestamp(String match_file_timestamp) {
+	this.match_file_timestamp = match_file_timestamp;
+}
 public int getTarget() {
 	return target;
 }

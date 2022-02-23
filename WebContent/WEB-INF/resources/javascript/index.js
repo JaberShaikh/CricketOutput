@@ -68,6 +68,9 @@ function processCricketProcedures(whatToProcess)
 	var valueToProcess;
 	
 	switch(whatToProcess) {
+	case 'READ-MATCH-AND-POPULATE':
+		valueToProcess = $('#match_file_timestamp').val();
+		break;
 	case 'POPULATE-SCORECARD':
 		switch ($('#selected_broadcaster').val().toUpperCase()) {
 		case 'DOAD':
@@ -99,7 +102,7 @@ function processCricketProcedures(whatToProcess)
 				break;
 			case 'POPULATE-ANIMATE-BUG':
 				break;
-			case 'POPULATE-SELECT-PLAYER':
+			case 'POPULATE-SELECT-PLAYER': case 'READ-MATCH-AND-POPULATE':
 				addItemsToList(whatToProcess,data);
 				break;
         	}
@@ -115,6 +118,23 @@ function addItemsToList(whatToProcess, dataToProcess)
 	var select,option,header_text,div,table,tbody,row,max_cols;
 	
 	switch (whatToProcess) {
+	case 'READ-MATCH-AND-POPULATE':
+		
+		$('#fruit_captions_div').empty();
+		if(dataToProcess) {
+			dataToProcess.inning.forEach(function(inn,index,arr) {
+				if(inn.isCurrentInning.toUpperCase() == 'YES') {
+					
+					header_text = document.createElement('h6');
+					header_text.innerHTML = 'Total ' + inn.totalRuns;
+					document.getElementById('fruit_captions_div').appendChild(header_text);
+					
+				}
+			});
+			$('#match_file_timestamp').attr('value',dataToProcess.match_file_timestamp);
+		}
+		break;
+		
 	case 'SCORECARD-OPTIONS':
 	
 		switch ($('#selected_broadcaster').val().toUpperCase()) {

@@ -7,7 +7,9 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.xml.bind.JAXBContext;
@@ -30,7 +32,6 @@ import com.cricket.model.BowlingCard;
 import com.cricket.model.Inning;
 import com.cricket.model.Match;
 import com.cricket.model.Player;
-import com.cricket.model.Scene;
 import com.cricket.service.CricketService;
 import com.cricket.util.CricketProceduresFunctions;
 import com.cricket.util.CricketUtil;
@@ -76,6 +77,7 @@ public class IndexController
 			@ModelAttribute("session_which_graphics_onscreen") String session_which_graphics_onscreen,
 			@ModelAttribute("session_match") Match session_match,
 			@ModelAttribute("session_selected_broadcaster") String session_selected_broadcaster,
+			@ModelAttribute("session_match_file_timestamp") String session_match_file_timestamp,
 			@RequestParam(value = "select_broadcaster", required = false, defaultValue = "") String select_broadcaster,
 			@RequestParam(value = "select_cricket_matches", required = false, defaultValue = "") String selectedMatch,
 			@RequestParam(value = "vizIPAddress", required = false, defaultValue = "") String vizIPAddresss,
@@ -86,8 +88,8 @@ public class IndexController
 		session_selected_match = selectedMatch; session_viz_ip_address = vizIPAddresss; session_selected_broadcaster = select_broadcaster;
 		session_viz_port_number = Integer.parseInt(vizPortNumber); session_viz_scene = vizScene; 
 		
-		session_socket = new Socket(vizIPAddresss, session_viz_port_number);
-		new Scene(vizScene).scene_load(new PrintWriter(session_socket.getOutputStream(),true));
+//		session_socket = new Socket(vizIPAddresss, session_viz_port_number);
+//		new Scene(vizScene).scene_load(new PrintWriter(session_socket.getOutputStream(),true));
 		session_which_graphics_onscreen = "";
 
 		session_match = populateMatchVariables((Match) JAXBContext.newInstance(Match.class).createUnmarshaller().unmarshal(
@@ -102,17 +104,45 @@ public class IndexController
 		
 		return "output";
 	}
+
+	@RequestMapping(value = {"/fruit"}, method={RequestMethod.GET,RequestMethod.POST}) 
+	public String fruitPage(ModelMap model,
+			@ModelAttribute("session_selected_match") String session_selected_match,
+			@ModelAttribute("session_match") Match session_match,
+			@ModelAttribute("session_selected_broadcaster") String session_selected_broadcaster)
+	{
+		session_match.setMatch_file_timestamp(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date()));
+		model.addAttribute("session_match", session_match);
+		model.addAttribute("session_selected_match", session_selected_match);
+		model.addAttribute("session_selected_broadcaster", session_selected_broadcaster);
+		
+		return "fruit";
+	}
 	
 	@RequestMapping(value = {"/processCricketProcedures"}, method={RequestMethod.GET,RequestMethod.POST})    
 	public @ResponseBody String processCricketProcedures(
 			@ModelAttribute("session_match") Match session_match,
 			@ModelAttribute("session_socket") Socket session_socket,
+			@ModelAttribute("session_selected_match") String session_selected_match,
 			@ModelAttribute("session_selected_broadcaster") String session_selected_broadcaster,
 			@ModelAttribute("session_which_graphics_onscreen") String session_which_graphics_onscreen,
 			@RequestParam(value = "whatToProcess", required = false, defaultValue = "") String whatToProcess,
-			@RequestParam(value = "valueToProcess", required = false, defaultValue = "") String valueToProcess) throws IOException
+			@RequestParam(value = "valueToProcess", required = false, defaultValue = "") String valueToProcess) 
+					throws IOException, IllegalAccessException, InvocationTargetException, JAXBException
 	{	
 		switch (whatToProcess.toUpperCase()) {
+		case "READ-MATCH-AND-POPULATE":
+			if(!valueToProcess.equalsIgnoreCase(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(
+					new File(CricketUtil.CRICKET_DIRECTORY + CricketUtil.MATCHES_DIRECTORY + session_selected_match).lastModified())))
+			{
+				session_match = populateMatchVariables((Match) JAXBContext.newInstance(Match.class).createUnmarshaller().unmarshal(
+						new File(CricketUtil.CRICKET_DIRECTORY + CricketUtil.MATCHES_DIRECTORY + session_selected_match)));
+				session_match.setMatch_file_timestamp(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(
+						new File(CricketUtil.CRICKET_DIRECTORY + CricketUtil.MATCHES_DIRECTORY + session_selected_match).lastModified()));
+				return JSONObject.fromObject(session_match).toString();
+			} else {
+				return JSONObject.fromObject(null).toString();
+			}
 		case "POPULATE-SCORECARD":
 			switch (session_selected_broadcaster.toUpperCase()) {
 			case CricketUtil.DOAD:
@@ -291,5 +321,4 @@ public class IndexController
 	public String session_which_graphics_onscreen(){
 		return new String();
 	}
-	
 }
